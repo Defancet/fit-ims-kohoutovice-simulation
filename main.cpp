@@ -1,34 +1,115 @@
 #include "simlib.h"
+#include <iostream>
 
-// global objects:
-Facility  Box("Box");
-Histogram Table("Table",0,25,20);
+Store lockerRoom("locker Room", 250);
+Store pool("swimming Pool", 230);
+Store sauna("sauna", 20);
 
-class Customer : public Process {
-    double Prichod;                 // atribute of each customer
-    void Behavior() {               // --- behavoir specification ---
-        Prichod = Time;               // incoming time
-        Seize(Box);                   // start of service
-        Wait(10);                     // time of service
-        Release(Box);                 // end of service
-        Table(Time-Prichod);          // waiting and service time
+Facility waterSlide("water Slide");
+
+class Visitor : public Process {
+public:
+    void Behavior() {
+        Enter(lockerRoom, 1);
+        Wait(Exponential(5));
+
+        double choice = Random();
+        if(choice <= 0.7){
+            pool: // bazen
+            Enter(pool,1);
+            double nChoice = Random();
+
+            if(nChoice <= 0.7){
+                swimming:
+                Wait(Exponential(25));
+                double eChoice = Random();
+                if(eChoice <= 0.4){
+                    goto swimming;
+                }
+                else if(eChoice <= 0.6){
+                    goto exitPool;
+                }
+                else{
+                    goto toboggan;
+                }
+
+            }
+            else{
+                toboggan:
+                Seize(waterSlide);
+                Wait(Exponential(2));
+                Release(waterSlide);
+                double tChoice = Random();
+                if(tChoice <= 0.7){
+                    goto swimming;
+                }
+                else if(tChoice <= 0.75){
+                    goto exitPool;
+                }
+                else{
+                    goto toboggan;
+                }
+
+            }
+
+        }
+        else{
+            // sauna
+            saunaLabel:
+            Enter(sauna, 1);
+
+            saunaInside:
+            Wait(Exponential(30));
+
+            double lChoice = Random();
+            if(lChoice <= 0.7){
+                Leave(sauna, 1);
+                goto pool;
+            }
+            else if(lChoice <= 0.8){
+                Leave(sauna, 1);
+                Leave(lockerRoom, 1);
+                Wait(Exponential(5)); // prevlek (mb delete)
+                return;
+            }
+            else{
+                goto saunaInside;
+            }
+
+        }
+
+        exitPool:
+        Leave(pool, 1);
+        double qChoice = Random();
+        if(qChoice <= 0.2){
+            Leave(lockerRoom, 1);
+            Wait(Exponential(5)); // prevlel delete ?
+            return;
+        }
+        else{
+            goto saunaLabel;
+        }
     }
 };
 
-class Generator : public Event {  // model of system's input
-    void Behavior() {               // --- behavior specification ---
-        (new Customer)->Activate();   // new customer
-        Activate(Time+Exponential(1e3/150));  //
+
+class Generator : public Event {
+public:
+    void Behavior() {
+        (new Visitor)->Activate();
+        Activate(Time+Exponential(5));
     }
+
 };
 
-int main() {                 // experiment description
-    Print(" model2 - SIMLIB/C++ example\n");
-    SetOutput("model2.out");
-    Init(0,1000);              // experiment initialization for time 0..1000
-    (new Generator)->Activate(); // customer generator
-    Run();                     // simulation
-    Box.Output();              // print of results
-    Table.Output();
-    return 0;
+int main()
+{
+    Init(0,100000);
+    (new Generator)->Activate();
+    Run();
+    lockerRoom.Output();
+    sauna.Output();
+    pool.Output();
+    waterSlide.Output();
 }
+
