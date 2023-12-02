@@ -1,6 +1,6 @@
 .PHONY = all clean
 CXX = g++
-TARGET = main
+TARGET = kohoutovice
 SIMLIB = -lsimlib -lm
 
 all: $(TARGET)
