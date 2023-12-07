@@ -42,12 +42,7 @@ public:
     void Behavior() {
         startTime = Time;
         EnterLockerRoom();
-        double choice = Random();
-        if (choice <= 0.6) {
-            GoSwimming();
-        } else {
-            GoToSauna();
-        }
+        ChooseActivity();
         LeaveLockerRoom();
     }
 
@@ -60,20 +55,27 @@ private:
     void LeaveLockerRoom() {
         Leave(lockerRoom, 1);
         Wait(Exponential(params.changingTime));
-        double transactionTime = Time - startTime;
-        std::cout << "Transaction time: " << transactionTime << std::endl;
-        transactionTimes.push_back(transactionTime);
+        RecordTransactionTime();
+    }
+
+    void ChooseActivity() {
+        double choice = Random();
+        if (choice <= 0.6) {
+            GoSwimming();
+        } else {
+            GoToSauna();
+        }
     }
 
     void GoSwimming() {
         Enter(pool, 1);
+        SwimUntilDone();
+        DecideAfterSwim();
+    }
+
+    void SwimUntilDone() {
         while (Random() <= 0.6) {
             Swim();
-        }
-        if (Random() <= 0.8) {
-            Leave(pool, 1);
-        } else {
-            UseWaterSlide();
         }
     }
 
@@ -81,10 +83,22 @@ private:
         Wait(Exponential(params.swimmingTime));
     }
 
+    void DecideAfterSwim() {
+        if (Random() <= 0.8) {
+            Leave(pool, 1);
+        } else {
+            UseWaterSlide();
+        }
+    }
+
     void UseWaterSlide() {
         Seize(waterSlide);
         Wait(Exponential(params.tobogganTime));
         Release(waterSlide);
+        DecideAfterSlide();
+    }
+
+    void DecideAfterSlide() {
         if (Random() <= 0.6) {
             GoSwimming();
         } else if (Random() <= 0.7) {
@@ -95,26 +109,44 @@ private:
     }
 
     void GoToSauna() {
-        double time_start = Time;
-        WaitUntil(!sauna.Full() || Time - time_start > Exponential(7));
+        WaitUntilSaunaIsAvailable();
         if (sauna.Full()) {
             totalWaiters++;
             GoSwimming();
         } else {
             Enter(sauna, 1);
-            while (Random() <= 0.55) {
-                ChillInSauna();
-            }
-            if (Random() <= 0.85) {
-                Leave(sauna, 1);
-            } else {
-                GoToSauna();
-            }
+            ChillUntilDone();
+            DecideAfterSauna();
+        }
+    }
+
+    void WaitUntilSaunaIsAvailable() {
+        double time_start = Time;
+        WaitUntil(!sauna.Full() || Time - time_start > Exponential(7));
+    }
+
+    void ChillUntilDone() {
+        while (Random() <= 0.55) {
+            ChillInSauna();
         }
     }
 
     void ChillInSauna() {
         Wait(Exponential(params.saunaTime));
+    }
+
+    void DecideAfterSauna() {
+        if (Random() <= 0.85) {
+            Leave(sauna, 1);
+        } else {
+            GoToSauna();
+        }
+    }
+
+    void RecordTransactionTime() {
+        double transactionTime = Time - startTime;
+        std::cout << "Transaction time: " << transactionTime << std::endl;
+        transactionTimes.push_back(transactionTime);
     }
 };
 
