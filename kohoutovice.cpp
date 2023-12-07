@@ -3,6 +3,9 @@
 #include "simlib.h"
 #include <iostream>
 #include <bits/getopt_core.h>
+#include <vector>
+
+using namespace std;
 
 #define WaitUntil(condition) while(_WaitUntil(condition))
 
@@ -11,56 +14,61 @@ Store pool("swimming Pools", 180);
 Store sauna("sauna", 20);
 
 Facility waterSlide("water Slide");
+
 int visitors = 0;
+
+double changingTime = 5;
 double workHours = 0;
-double visitorsArivalTime = 0;
+double saunaWaitTime = 7;
+double saunaTime = 15;
+double tobogganTime = 1;
+double visitorsArrivalTime = 0;
+double swimmingTime = 25;
+
+vector<double> TM;
 
 class Visitor : public Process {
 public:
+    double startTime;
     void Behavior() {
+        startTime = Time;
         Enter(lockerRoom, 1);
-        Wait(Exponential(5));   //changing time in locker room
+        Wait(Exponential(changingTime));   //changing time in locker room
 
         double choice = Random();
         if (choice <= 0.7) {    //go swimming
-        pool: // bazen
+            pool: // bazen
             Enter(pool, 1);
             double nChoice = Random();
 
             if (nChoice <= 0.65) {   //continue swimming
-            swimming:
-                Wait(Exponential(25));
+                swimming:
+                Wait(Exponential(swimmingTime));
                 double eChoice = Random();
                 if (eChoice <= 0.7) {
                     goto swimming;
-                }
-                else if (eChoice <= 0.85) {
+                } else if (eChoice <= 0.85) {
                     // change to 0.85
                     goto exitPool;
-                }
-                else {
+                } else {
                     goto toboggan;
                 }
-            }
-            else {  //go from pool to toboggan
-            toboggan:
+            } else {  //go from pool to toboggan
+                toboggan:
                 Seize(waterSlide);
-                Wait(Exponential(1));
+                Wait(Exponential(tobogganTime));
                 Release(waterSlide);
                 double tChoice = Random();
                 if (tChoice <= 0.7) {
                     goto swimming;
-                }
-                else if (tChoice <= 0.8) {
+                } else if (tChoice <= 0.8) {
                     goto exitPool;
-                }
-                else {
+                } else {
                     goto toboggan;
                 }
             }
-        }
-        else {  //go to sauna
-        saunaLabel:
+        } else {  //go to sauna
+            saunaLabel:
             double time_start = Time;
             WaitUntil(!sauna.Full() || Time - time_start > Exponential(7));
             if (sauna.Full()) { // if sauna is full, go to pool
@@ -69,36 +77,37 @@ public:
 
             Enter(sauna, 1);
 
-        saunaInside:
-            Wait(Exponential(20));  //chilling in sauna
+            saunaInside:
+            Wait(Exponential(saunaTime));  //chilling in sauna
 
             double lChoice = Random();
             if (lChoice <= 0.7) {   // go to pool
                 Leave(sauna, 1);
                 goto pool;
-            }
-            else if (lChoice <= 0.8) {  // leave
+            } else if (lChoice <= 0.8) {  // leave
                 Leave(sauna, 1);
                 Leave(lockerRoom, 1);
-                Wait(Exponential(5)); // prevlek (mb delete)
-                std::cout << "SAUNA EXIT" << std::endl;
+                Wait(Exponential(changingTime)); // prevlek (mb delete)
+                double transactionTime = Time - startTime;
+                std::cout << "Transaction time: " << transactionTime << std::endl;
+                TM.push_back(transactionTime);
                 return;
-            }
-            else {
+            } else {
                 goto saunaInside;
             }
         }
 
-    exitPool:
+        exitPool:
         Leave(pool, 1);
         double qChoice = Random();
         if (qChoice <= 0.3) {   // leave
             Leave(lockerRoom, 1);
-            Wait(Exponential(5)); // prevlel delete ?
-            std::cout << "BASIK EXIT" << std::endl;
+            Wait(Exponential(changingTime)); // prevlel delete ?
+            double transactionTime = Time - startTime;
+            std::cout << "Transaction time: " << transactionTime << std::endl;
+            TM.push_back(transactionTime);
             return;
-        }
-        else {
+        } else {
             goto saunaLabel;   // go to sauna
         }
     }
@@ -110,7 +119,7 @@ public:
     void Behavior() {
         (new Visitor)->Activate();
         visitors++;
-        Activate(Time + Exponential(visitorsArivalTime));    //arrival time
+        Activate(Time + Exponential(visitorsArrivalTime));    //arrival time
     }
 };
 
@@ -121,7 +130,7 @@ void printUsage(const char *programName) {
     std::cout << "  -d <day_type> - type of the day (weekday, weekend, holiday)\n";
 }
 
-void ParseArguments(int argc, char* argv[]) {
+void ParseArguments(int argc, char *argv[]) {
     if (argc < 2) {
         printUsage(argv[0]);
         exit(EXIT_FAILURE);
@@ -134,29 +143,26 @@ void ParseArguments(int argc, char* argv[]) {
             case 'd':
                 if (strcmp(optarg, "weekday") == 0) {
                     workHours = 12 * 60;
-                    visitorsArivalTime = 3;
-                }
-                else if (strcmp(optarg, "weekend") == 0) {
+                    visitorsArrivalTime = 1.42;
+                } else if (strcmp(optarg, "weekend") == 0) {
                     workHours = 14 * 60;
-                    visitorsArivalTime = 2.5;
-                }
-                else if (strcmp(optarg, "holiday") == 0) {
+                    visitorsArrivalTime = 4;
+                } else if (strcmp(optarg, "holiday") == 0) {
                     workHours = 14 * 60;
-                    visitorsArivalTime = 2;
-                }
-                else {
+                    visitorsArrivalTime = 2;
+                } else {
                     printUsage(argv[0]);
                     exit(EXIT_FAILURE);
                 }
-            break;
+                break;
 
             case '?':
-                    printUsage(argv[0]);
-            exit(EXIT_FAILURE);
+                printUsage(argv[0]);
+                exit(EXIT_FAILURE);
         }
     }
 
-    if (workHours == 0 || visitorsArivalTime == 0) {
+    if (workHours == 0 || visitorsArrivalTime == 0) {
         printUsage(argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -168,7 +174,7 @@ void ParseArguments(int argc, char* argv[]) {
     }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     ParseArguments(argc, argv);
 
     Init(0, workHours);
@@ -180,6 +186,12 @@ int main(int argc, char* argv[]) {
     pool.Output();
     waterSlide.Output();
     std::cout << visitors << std::endl;
+
+    double sum = 0;
+    for (int i = 0; i < TM.size(); i++) {
+        sum += TM[i];
+    }
+    std::cout << "Average transaction time: " << sum / TM.size() << std::endl;
 
     return 0;
 }
