@@ -36,19 +36,18 @@ public:
         Wait(Exponential(changingTime));   //changing time in locker room
 
         double choice = Random();
-        if (choice <= 0.7) {    //go swimming
+        if (choice <= 0.6) {    //go swimming
             pool: // bazen
             Enter(pool, 1);
             double nChoice = Random();
 
-            if (nChoice <= 0.65) {   //continue swimming
+            if (nChoice <= 0.6) {   //continue swimming
                 swimming:
                 Wait(Exponential(swimmingTime));
                 double eChoice = Random();
-                if (eChoice <= 0.7) {
+                if (eChoice <= 0.6) {
                     goto swimming;
-                } else if (eChoice <= 0.85) {
-                    // change to 0.85
+                } else if (eChoice <= 0.8) {
                     goto exitPool;
                 } else {
                     goto toboggan;
@@ -59,9 +58,9 @@ public:
                 Wait(Exponential(tobogganTime));
                 Release(waterSlide);
                 double tChoice = Random();
-                if (tChoice <= 0.7) {
+                if (tChoice <= 0.6) {
                     goto swimming;
-                } else if (tChoice <= 0.8) {
+                } else if (tChoice <= 0.7) {
                     goto exitPool;
                 } else {
                     goto toboggan;
@@ -81,10 +80,10 @@ public:
             Wait(Exponential(saunaTime));  //chilling in sauna
 
             double lChoice = Random();
-            if (lChoice <= 0.7) {   // go to pool
+            if (lChoice <= 0.55) {   // go to pool
                 Leave(sauna, 1);
                 goto pool;
-            } else if (lChoice <= 0.8) {  // leave
+            } else if (lChoice <= 0.85) {  // leave
                 Leave(sauna, 1);
                 Leave(lockerRoom, 1);
                 Wait(Exponential(changingTime)); // prevlek (mb delete)
@@ -100,7 +99,7 @@ public:
         exitPool:
         Leave(pool, 1);
         double qChoice = Random();
-        if (qChoice <= 0.3) {   // leave
+        if (qChoice <= 0.5) {   // leave
             Leave(lockerRoom, 1);
             Wait(Exponential(changingTime)); // prevlel delete ?
             double transactionTime = Time - startTime;
