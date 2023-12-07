@@ -1,40 +1,48 @@
 #include <cstring>
-
-#include "simlib.h"
 #include <iostream>
 #include <bits/getopt_core.h>
 #include <vector>
+#include "simlib.h"
 
 using namespace std;
 
 #define WaitUntil(condition) while(_WaitUntil(condition))
 
-Store lockerRoom("locker Room", 200);
-Store pool("swimming Pools", 180);
-Store sauna("sauna", 20);
+const int LOCKER_ROOM_CAPACITY = 200;
+const int POOL_CAPACITY = 180;
+const int SAUNA_CAPACITY = 20;
 
-Facility waterSlide("water Slide");
+Store lockerRoom("Locker Room", LOCKER_ROOM_CAPACITY);
+Store pool("Swimming Pools", POOL_CAPACITY);
+Store sauna("Sauna", SAUNA_CAPACITY);
 
-int visitors = 0;
-int waiters = 0;
+Facility waterSlide("Water Slide");
 
-double changingTime = 5;
-double workHours = 0;
-double saunaWaitTime = 7;
-double saunaTime = 15;
-double tobogganTime = 1;
-double visitorsArrivalTime = 0;
-double swimmingTime = 25;
+int totalVisitors = 0;
+int totalWaiters = 0;
 
-vector<double> TM;
+struct SimulationParameters {
+    double changingTime;
+    double workHours;
+    double saunaWaitTime;
+    double saunaTime;
+    double tobogganTime;
+    double visitorsArrivalTime;
+    double swimmingTime;
+};
+
+SimulationParameters params = {5, 0, 7, 15, 1, 0, 25};
+
+vector<double> transactionTimes;
 
 class Visitor : public Process {
 public:
     double startTime;
+
     void Behavior() {
         startTime = Time;
         Enter(lockerRoom, 1);
-        Wait(Exponential(changingTime));   //changing time in locker room
+        Wait(Exponential(params.changingTime));   //changing time in locker room
 
         double choice = Random();
         if (choice <= 0.6) {    //go swimming
@@ -44,7 +52,7 @@ public:
 
             if (nChoice <= 0.6) {   //continue swimming
                 swimming:
-                Wait(Exponential(swimmingTime));
+                Wait(Exponential(params.swimmingTime));
                 double eChoice = Random();
                 if (eChoice <= 0.6) {
                     goto swimming;
@@ -56,7 +64,7 @@ public:
             } else {  //go from pool to toboggan
                 toboggan:
                 Seize(waterSlide);
-                Wait(Exponential(tobogganTime));
+                Wait(Exponential(params.tobogganTime));
                 Release(waterSlide);
                 double tChoice = Random();
                 if (tChoice <= 0.6) {
@@ -72,14 +80,14 @@ public:
             double time_start = Time;
             WaitUntil(!sauna.Full() || Time - time_start > Exponential(7));
             if (sauna.Full()) { // if sauna is full, go to pool
-                waiters++;
+                totalWaiters++;
                 goto pool;
             }
 
             Enter(sauna, 1);
 
             saunaInside:
-            Wait(Exponential(saunaTime));  //chilling in sauna
+            Wait(Exponential(params.saunaTime));  //chilling in sauna
 
             double lChoice = Random();
             if (lChoice <= 0.55) {   // go to pool
@@ -88,10 +96,10 @@ public:
             } else if (lChoice <= 0.85) {  // leave
                 Leave(sauna, 1);
                 Leave(lockerRoom, 1);
-                Wait(Exponential(changingTime)); // prevlek (mb delete)
+                Wait(Exponential(params.changingTime)); // prevlek (mb delete)
                 double transactionTime = Time - startTime;
                 std::cout << "Transaction time: " << transactionTime << std::endl;
-                TM.push_back(transactionTime);
+                transactionTimes.push_back(transactionTime);
                 return;
             } else {
                 goto saunaInside;
@@ -103,10 +111,10 @@ public:
         double qChoice = Random();
         if (qChoice <= 0.5) {   // leave
             Leave(lockerRoom, 1);
-            Wait(Exponential(changingTime)); // prevlel delete ?
+            Wait(Exponential(params.changingTime)); // prevlel delete ?
             double transactionTime = Time - startTime;
             std::cout << "Transaction time: " << transactionTime << std::endl;
-            TM.push_back(transactionTime);
+            transactionTimes.push_back(transactionTime);
             return;
         } else {
             goto saunaLabel;   // go to sauna
@@ -114,13 +122,12 @@ public:
     }
 };
 
-
 class Generator : public Event {
 public:
     void Behavior() {
         (new Visitor)->Activate();
-        visitors++;
-        Activate(Time + Exponential(visitorsArrivalTime));    //arrival time
+        totalVisitors++;
+        Activate(Time + Exponential(params.visitorsArrivalTime));    //arrival time
     }
 };
 
@@ -143,14 +150,14 @@ void ParseArguments(int argc, char *argv[]) {
         switch (opt) {
             case 'd':
                 if (strcmp(optarg, "weekday") == 0) {
-                    workHours = 12 * 60;
-                    visitorsArrivalTime = 1.42;
+                    params.workHours = 12 * 60;
+                    params.visitorsArrivalTime = 1.42;
                 } else if (strcmp(optarg, "weekend") == 0) {
-                    workHours = 14 * 60;
-                    visitorsArrivalTime = 4;
+                    params.workHours = 14 * 60;
+                    params.visitorsArrivalTime = 4;
                 } else if (strcmp(optarg, "holiday") == 0) {
-                    workHours = 14 * 60;
-                    visitorsArrivalTime = 1.18;
+                    params.workHours = 14 * 60;
+                    params.visitorsArrivalTime = 1.18;
                 } else {
                     printUsage(argv[0]);
                     exit(EXIT_FAILURE);
@@ -163,7 +170,7 @@ void ParseArguments(int argc, char *argv[]) {
         }
     }
 
-    if (workHours == 0 || visitorsArrivalTime == 0) {
+    if (params.workHours == 0 || params.visitorsArrivalTime == 0) {
         printUsage(argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -178,7 +185,7 @@ void ParseArguments(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     ParseArguments(argc, argv);
 
-    Init(0, workHours);
+    Init(0, params.workHours);
 
     (new Generator)->Activate();
     Run();
@@ -186,14 +193,14 @@ int main(int argc, char *argv[]) {
     sauna.Output();
     pool.Output();
     waterSlide.Output();
-    std::cout << visitors << std::endl;
+    std::cout << totalVisitors << std::endl;
 
     double sum = 0;
-    for (int i = 0; i < TM.size(); i++) {
-        sum += TM[i];
+    for (int i = 0; i < transactionTimes.size(); i++) {
+        sum += transactionTimes[i];
     }
-    std::cout << "Average transaction time: " << sum / TM.size() << std::endl;
-    std::cout << "Waiters: " << waiters << std::endl;
+    std::cout << "Average transaction time: " << sum / transactionTimes.size() << std::endl;
+    std::cout << "Waiters: " << totalWaiters << std::endl;
 
     return 0;
 }
