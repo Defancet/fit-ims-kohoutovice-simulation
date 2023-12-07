@@ -16,6 +16,7 @@ Store sauna("sauna", 20);
 Facility waterSlide("water Slide");
 
 int visitors = 0;
+int waiters = 0;
 
 double changingTime = 5;
 double workHours = 0;
@@ -71,6 +72,7 @@ public:
             double time_start = Time;
             WaitUntil(!sauna.Full() || Time - time_start > Exponential(7));
             if (sauna.Full()) { // if sauna is full, go to pool
+                waiters++;
                 goto pool;
             }
 
@@ -148,7 +150,7 @@ void ParseArguments(int argc, char *argv[]) {
                     visitorsArrivalTime = 4;
                 } else if (strcmp(optarg, "holiday") == 0) {
                     workHours = 14 * 60;
-                    visitorsArrivalTime = 2;
+                    visitorsArrivalTime = 1.18;
                 } else {
                     printUsage(argv[0]);
                     exit(EXIT_FAILURE);
@@ -191,6 +193,7 @@ int main(int argc, char *argv[]) {
         sum += TM[i];
     }
     std::cout << "Average transaction time: " << sum / TM.size() << std::endl;
+    std::cout << "Waiters: " << waiters << std::endl;
 
     return 0;
 }
