@@ -31,7 +31,7 @@ struct SimulationParameters {
     double swimmingTime;
 };
 
-SimulationParameters params = {5, 0, 7, 15, 1, 0, 25};
+SimulationParameters params = {5, 0, 15, 30, 1, 0, 40};
 
 vector<double> transactionTimes;
 
@@ -41,84 +41,128 @@ public:
 
     void Behavior() {
         startTime = Time;
+        EnterLockerRoom();
+        ChooseActivity();
+        LeaveLockerRoom();
+    }
+
+private:
+    void EnterLockerRoom() {
         Enter(lockerRoom, 1);
-        Wait(Exponential(params.changingTime));   //changing time in locker room
+        Wait(Exponential(params.changingTime));
+    }
 
+    void LeaveLockerRoom() {
+        Leave(lockerRoom, 1);
+        Wait(Exponential(params.changingTime));
+        RecordTransactionTime();
+    }
+
+    void ChooseActivity() {
         double choice = Random();
-        if (choice <= 0.6) {    //go swimming
-            pool: // bazen
-            Enter(pool, 1);
-            double nChoice = Random();
-
-            if (nChoice <= 0.6) {   //continue swimming
-                swimming:
-                Wait(Exponential(params.swimmingTime));
-                double eChoice = Random();
-                if (eChoice <= 0.6) {
-                    goto swimming;
-                } else if (eChoice <= 0.8) {
-                    goto exitPool;
-                } else {
-                    goto toboggan;
-                }
-            } else {  //go from pool to toboggan
-                toboggan:
-                Seize(waterSlide);
-                Wait(Exponential(params.tobogganTime));
-                Release(waterSlide);
-                double tChoice = Random();
-                if (tChoice <= 0.6) {
-                    goto swimming;
-                } else if (tChoice <= 0.7) {
-                    goto exitPool;
-                } else {
-                    goto toboggan;
-                }
-            }
-        } else {  //go to sauna
-            saunaLabel:
-            double time_start = Time;
-            WaitUntil(!sauna.Full() || Time - time_start > Exponential(7));
-            if (sauna.Full()) { // if sauna is full, go to pool
-                totalWaiters++;
-                goto pool;
-            }
-
-            Enter(sauna, 1);
-
-            saunaInside:
-            Wait(Exponential(params.saunaTime));  //chilling in sauna
-
-            double lChoice = Random();
-            if (lChoice <= 0.55) {   // go to pool
-                Leave(sauna, 1);
-                goto pool;
-            } else if (lChoice <= 0.85) {  // leave
-                Leave(sauna, 1);
-                Leave(lockerRoom, 1);
-                Wait(Exponential(params.changingTime)); // prevlek (mb delete)
-                double transactionTime = Time - startTime;
-                std::cout << "Transaction time: " << transactionTime << std::endl;
-                transactionTimes.push_back(transactionTime);
-                return;
-            } else {
-                goto saunaInside;
-            }
-        }
-
-        exitPool:
-        Leave(pool, 1);
-        double qChoice = Random();
-        if (qChoice <= 0.5) {   // leave
-            Leave(lockerRoom, 1);
-            Wait(Exponential(params.changingTime)); // prevlel delete ?
-            double transactionTime = Time - startTime;
-            std::cout << "Transaction time: " << transactionTime << std::endl;
-            transactionTimes.push_back(transactionTime);
-            return;
+        if (choice <= 0.7) {
+            GoSwimming();
         } else {
-            goto saunaLabel;   // go to sauna
+            GoToSauna();
         }
+    }
+
+    void GoSwimming() {
+        Enter(pool, 1);
+        //SwimUntilDone();
+        Swim();
+        DecideAfterSwim();
+    }
+
+//    void SwimUntilDone() {
+//        while (Random() <= 0.6) {
+//            Swim();
+//        }
+//    }
+
+    void Swim() {
+        Wait(Exponential(params.swimmingTime));
+    }
+
+    void DecideAfterSwim() {
+        double random = Random();
+        if (random <= 0.3) {
+            Leave(pool, 1);
+        }
+        else if(random <= 0.65){
+            Leave(pool, 1);
+            GoToSauna();
+        }
+        else {
+            UseWaterSlide();
+        }
+    }
+
+    void UseWaterSlide() {
+        Seize(waterSlide);
+        Wait(Exponential(params.tobogganTime));
+        Release(waterSlide);
+        DecideAfterSlide();
+    }
+
+    void DecideAfterSlide() {
+        double random = Random();
+        if (random <= 0.45) {
+            Leave(pool, 1); // ?))))))))))))))))
+            GoSwimming();
+        } else if (random <= 0.5) {
+            Leave(pool, 1);
+        } else {
+            UseWaterSlide();
+        }
+    }
+
+    void GoToSauna() {
+        WaitUntilSaunaIsAvailable();
+        if (sauna.Full()) {
+            totalWaiters++;
+            GoSwimming();
+        } else {
+            Enter(sauna, 1);
+            //ChillUntilDone();
+            ChillInSauna();
+            DecideAfterSauna();
+        }
+    }
+
+    void WaitUntilSaunaIsAvailable() {
+        double time_start = Time;
+        WaitUntil(!sauna.Full() || Time - time_start > Exponential(params.saunaWaitTime));
+    }
+
+//    void ChillUntilDone() {
+//        while (Random() <= 0.55) {
+//            ChillInSauna();
+//        }
+//    }
+
+    void ChillInSauna() {
+        Wait(Exponential(params.saunaTime));
+    }
+
+    void DecideAfterSauna() {
+        double random = Random();
+        if (random <= 0.5) {
+            Leave(sauna, 1);
+        }
+        else{
+            Leave(sauna, 1);
+            GoSwimming();
+        }
+//        else {
+//            GoToSauna();
+//        }
+    }
+
+    void RecordTransactionTime() {
+        double transactionTime = Time - startTime;
+        std::cout << "Transaction time: " << transactionTime << std::endl;
+        transactionTimes.push_back(transactionTime);
     }
 };
 
@@ -154,10 +198,10 @@ void ParseArguments(int argc, char *argv[]) {
                     params.visitorsArrivalTime = 1.42;
                 } else if (strcmp(optarg, "weekend") == 0) {
                     params.workHours = 14 * 60;
-                    params.visitorsArrivalTime = 4;
+                    params.visitorsArrivalTime = 1.30;
                 } else if (strcmp(optarg, "holiday") == 0) {
                     params.workHours = 14 * 60;
-                    params.visitorsArrivalTime = 1.18;
+                    params.visitorsArrivalTime = 2.1;
                 } else {
                     printUsage(argv[0]);
                     exit(EXIT_FAILURE);
