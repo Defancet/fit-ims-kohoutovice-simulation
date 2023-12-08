@@ -2,6 +2,7 @@
 #include <iostream>
 #include <bits/getopt_core.h>
 #include <vector>
+#include "getopt.h"
 #include "simlib.h"
 
 using namespace std;
@@ -177,9 +178,10 @@ public:
 
 void printUsage(const char *programName) {
     std::cout << "Usage: " << programName
-              << " ./kohoutovice -d <day_type>\n";
+              << " -d --day <day_type>\n";
     std::cout << "Options:\n";
-    std::cout << "  -d <day_type> - type of the day (weekday, weekend, holiday)\n";
+    std::cout << "  -h --help - prints help\n";
+    std::cout << "  -d --day <day_type> - type of the day (weekday, weekend, holiday)\n";
 }
 
 void ParseArguments(int argc, char *argv[]) {
@@ -188,10 +190,20 @@ void ParseArguments(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int opt;
+    static struct option long_options[] = {
+            {"help", no_argument,       0, 'h'},
+            {"day",  required_argument, 0, 'd'},
+            {0, 0,                      0, 0}
+    };
 
-    while ((opt = getopt(argc, argv, "d:")) != -1) {
+    int opt;
+    int option_index = 0;
+
+    while ((opt = getopt_long(argc, argv, "hd:", long_options, &option_index)) != -1) {
         switch (opt) {
+            case 'h':
+                printUsage(argv[0]);
+                exit(EXIT_SUCCESS);
             case 'd':
                 if (strcmp(optarg, "weekday") == 0) {
                     params.workHours = 12 * 60;
