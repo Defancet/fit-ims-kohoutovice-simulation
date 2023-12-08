@@ -31,7 +31,7 @@ struct SimulationParameters {
     double swimmingTime;
 };
 
-SimulationParameters params = {5, 0, 7, 25, 1, 0, 25};
+SimulationParameters params = {5, 0, 15, 30, 1, 0, 40};
 
 vector<double> transactionTimes;
 
@@ -60,7 +60,7 @@ private:
 
     void ChooseActivity() {
         double choice = Random();
-        if (choice <= 0.6) {
+        if (choice <= 0.7) {
             GoSwimming();
         } else {
             GoToSauna();
@@ -86,10 +86,11 @@ private:
 
     void DecideAfterSwim() {
         double random = Random();
-        if (random <= 0.7) {
+        if (random <= 0.3) {
             Leave(pool, 1);
         }
-        else if(random <= 0.85){
+        else if(random <= 0.65){
+            Leave(pool, 1);
             GoToSauna();
         }
         else {
@@ -106,9 +107,10 @@ private:
 
     void DecideAfterSlide() {
         double random = Random();
-        if (random <= 0.6) {
+        if (random <= 0.45) {
+            Leave(pool, 1); // ?))))))))))))))))
             GoSwimming();
-        } else if (random <= 0.7) {
+        } else if (random <= 0.5) {
             Leave(pool, 1);
         } else {
             UseWaterSlide();
@@ -130,7 +132,7 @@ private:
 
     void WaitUntilSaunaIsAvailable() {
         double time_start = Time;
-        WaitUntil(!sauna.Full() || Time - time_start > Exponential(7));
+        WaitUntil(!sauna.Full() || Time - time_start > Exponential(params.saunaWaitTime));
     }
 
 //    void ChillUntilDone() {
@@ -149,6 +151,7 @@ private:
             Leave(sauna, 1);
         }
         else{
+            Leave(sauna, 1);
             GoSwimming();
         }
 //        else {
@@ -195,10 +198,10 @@ void ParseArguments(int argc, char *argv[]) {
                     params.visitorsArrivalTime = 1.42;
                 } else if (strcmp(optarg, "weekend") == 0) {
                     params.workHours = 14 * 60;
-                    params.visitorsArrivalTime = 4;
+                    params.visitorsArrivalTime = 1.30;
                 } else if (strcmp(optarg, "holiday") == 0) {
                     params.workHours = 14 * 60;
-                    params.visitorsArrivalTime = 1.18;
+                    params.visitorsArrivalTime = 2.1;
                 } else {
                     printUsage(argv[0]);
                     exit(EXIT_FAILURE);
