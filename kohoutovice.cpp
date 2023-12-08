@@ -4,6 +4,7 @@
 #include <vector>
 #include "getopt.h"
 #include "simlib.h"
+#include <fstream>
 
 using namespace std;
 
@@ -240,7 +241,7 @@ void ParseArguments(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
     ParseArguments(argc, argv);
-
+    SetOutput("aqua.dat");
     Init(0, params.workHours);
 
     (new Generator)->Activate();
@@ -257,6 +258,17 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Average transaction time: " << sum / transactionTimes.size() << std::endl;
     std::cout << "Waiters: " << totalWaiters << std::endl;
+
+    std::ofstream file("aqua.dat", std::ios::app);
+
+    if (file.is_open()) {
+        //file << "Average transaction time: " << sum / transactionTimes.size() << std::endl;
+        file << "Sauna waiters: " << totalWaiters << std::endl;
+        file.close();
+    } else {
+        std::cout << "Cant open file" << std::endl;
+    }
+
 
     return 0;
 }
