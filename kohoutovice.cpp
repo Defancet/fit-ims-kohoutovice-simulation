@@ -71,16 +71,9 @@ private:
 
     void GoSwimming() {
         Enter(pool, 1);
-        //SwimUntilDone();
         Swim();
         DecideAfterSwim();
     }
-
-//    void SwimUntilDone() {
-//        while (Random() <= 0.6) {
-//            Swim();
-//        }
-//    }
 
     void Swim() {
         Wait(Exponential(params.swimmingTime));
@@ -90,12 +83,10 @@ private:
         double random = Random();
         if (random <= 0.3) {
             Leave(pool, 1);
-        }
-        else if(random <= 0.65){
+        } else if (random <= 0.65) {
             Leave(pool, 1);
             GoToSauna();
-        }
-        else {
+        } else {
             UseWaterSlide();
         }
     }
@@ -110,7 +101,7 @@ private:
     void DecideAfterSlide() {
         double random = Random();
         if (random <= 0.45) {
-            Leave(pool, 1); // ?))))))))))))))))
+            Leave(pool, 1);
             GoSwimming();
         } else if (random <= 0.5) {
             Leave(pool, 1);
@@ -126,7 +117,6 @@ private:
             GoSwimming();
         } else {
             Enter(sauna, 1);
-            //ChillUntilDone();
             ChillInSauna();
             DecideAfterSauna();
         }
@@ -137,12 +127,6 @@ private:
         WaitUntil(!sauna.Full() || Time - time_start > Exponential(params.saunaWaitTime));
     }
 
-//    void ChillUntilDone() {
-//        while (Random() <= 0.55) {
-//            ChillInSauna();
-//        }
-//    }
-
     void ChillInSauna() {
         Wait(Exponential(params.saunaTime));
     }
@@ -151,19 +135,15 @@ private:
         double random = Random();
         if (random <= 0.5) {
             Leave(sauna, 1);
-        }
-        else{
+        } else {
             Leave(sauna, 1);
             GoSwimming();
         }
-//        else {
-//            GoToSauna();
-//        }
     }
 
     void RecordTransactionTime() {
         double transactionTime = Time - startTime;
-        std::cout << "Transaction time: " << transactionTime << std::endl;
+        //std::cout << "Transaction time: " << transactionTime << std::endl;
         transactionTimes.push_back(transactionTime);
     }
 };
@@ -173,7 +153,7 @@ public:
     void Behavior() {
         (new Visitor)->Activate();
         totalVisitors++;
-        Activate(Time + Exponential(params.visitorsArrivalTime));    //arrival time
+        Activate(Time + Exponential(params.visitorsArrivalTime));
     }
 };
 
@@ -194,7 +174,7 @@ void ParseArguments(int argc, char *argv[]) {
     static struct option long_options[] = {
             {"help", no_argument,       0, 'h'},
             {"day",  required_argument, 0, 'd'},
-            {0, 0,                      0, 0}
+            {0,      0,                 0, 0}
     };
 
     int opt;
@@ -241,7 +221,7 @@ void ParseArguments(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
     ParseArguments(argc, argv);
-    SetOutput("aqua.dat");
+    SetOutput("kohoutovice.dat");
     Init(0, params.workHours);
 
     (new Generator)->Activate();
@@ -256,19 +236,18 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < transactionTimes.size(); i++) {
         sum += transactionTimes[i];
     }
-    std::cout << "Average transaction time: " << sum / transactionTimes.size() << std::endl;
-    std::cout << "Waiters: " << totalWaiters << std::endl;
+    //std::cout << "Average transaction time: " << sum / transactionTimes.size() << std::endl;
+    //std::cout << "Waiters: " << totalWaiters << std::endl;
 
-    std::ofstream file("aqua.dat", std::ios::app);
+    std::ofstream file("kohoutovice.dat", std::ios::app);
 
     if (file.is_open()) {
-        //file << "Average transaction time: " << sum / transactionTimes.size() << std::endl;
+
         file << "Sauna waiters: " << totalWaiters << std::endl;
         file.close();
     } else {
         std::cout << "Cant open file" << std::endl;
     }
-
 
     return 0;
 }

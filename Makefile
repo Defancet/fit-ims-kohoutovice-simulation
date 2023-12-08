@@ -9,4 +9,4 @@ $(TARGET): $(TARGET).cpp
 	$(CXX) $(CXXFLAGS) $< $(LIBS) $(SIMLIB) -o $@
 
 clean:
-	rm -rf *.o $(TARGET)
+	rm -rf *.o $(TARGET) -f kohoutovice.dat
