@@ -31,7 +31,7 @@ struct SimulationParameters {
     double swimmingTime;
 };
 
-SimulationParameters params = {5, 0, 7, 15, 1, 0, 25};
+SimulationParameters params = {5, 0, 7, 25, 1, 0, 25};
 
 vector<double> transactionTimes;
 
@@ -69,24 +69,30 @@ private:
 
     void GoSwimming() {
         Enter(pool, 1);
-        SwimUntilDone();
+        //SwimUntilDone();
+        Swim();
         DecideAfterSwim();
     }
 
-    void SwimUntilDone() {
-        while (Random() <= 0.6) {
-            Swim();
-        }
-    }
+//    void SwimUntilDone() {
+//        while (Random() <= 0.6) {
+//            Swim();
+//        }
+//    }
 
     void Swim() {
         Wait(Exponential(params.swimmingTime));
     }
 
     void DecideAfterSwim() {
-        if (Random() <= 0.8) {
+        double random = Random();
+        if (random <= 0.7) {
             Leave(pool, 1);
-        } else {
+        }
+        else if(random <= 0.85){
+            GoToSauna();
+        }
+        else {
             UseWaterSlide();
         }
     }
@@ -99,9 +105,10 @@ private:
     }
 
     void DecideAfterSlide() {
-        if (Random() <= 0.6) {
+        double random = Random();
+        if (random <= 0.6) {
             GoSwimming();
-        } else if (Random() <= 0.7) {
+        } else if (random <= 0.7) {
             Leave(pool, 1);
         } else {
             UseWaterSlide();
@@ -115,7 +122,8 @@ private:
             GoSwimming();
         } else {
             Enter(sauna, 1);
-            ChillUntilDone();
+            //ChillUntilDone();
+            ChillInSauna();
             DecideAfterSauna();
         }
     }
@@ -125,22 +133,27 @@ private:
         WaitUntil(!sauna.Full() || Time - time_start > Exponential(7));
     }
 
-    void ChillUntilDone() {
-        while (Random() <= 0.55) {
-            ChillInSauna();
-        }
-    }
+//    void ChillUntilDone() {
+//        while (Random() <= 0.55) {
+//            ChillInSauna();
+//        }
+//    }
 
     void ChillInSauna() {
         Wait(Exponential(params.saunaTime));
     }
 
     void DecideAfterSauna() {
-        if (Random() <= 0.85) {
+        double random = Random();
+        if (random <= 0.5) {
             Leave(sauna, 1);
-        } else {
-            GoToSauna();
         }
+        else{
+            GoSwimming();
+        }
+//        else {
+//            GoToSauna();
+//        }
     }
 
     void RecordTransactionTime() {
