@@ -1,3 +1,14 @@
+/**
+ * Kohoutovice aquapark simulation
+ * @authors
+ *  xkalut00, Maksim Kalutski
+ *  xrasst00, Sergei Rasstrigin
+ *
+ * @file   kohooutovice.cpp
+ * @brief  Implementation of Kohoutovice aquapark simulation
+ * @date   30.11.2023
+ */
+
 #include <cstring>
 #include <iostream>
 #include <bits/getopt_core.h>
@@ -10,19 +21,23 @@ using namespace std;
 
 #define WaitUntil(condition) while(_WaitUntil(condition))
 
+/** Constants defining capacities */
 const int LOCKER_ROOM_CAPACITY = 192;
 const int POOL_CAPACITY = 180;
 const int SAUNA_CAPACITY = 12;
 
+/** Facilities and Stores representing different areas in the aquapark */
 Store lockerRoom("Locker Room", LOCKER_ROOM_CAPACITY);
 Store pool("Swimming Pools", POOL_CAPACITY);
 Store sauna("Sauna", SAUNA_CAPACITY);
 
 Facility waterSlide("Water Slide");
 
+/** Global variables to track statistics */
 int totalVisitors = 0;
 int totalWaiters = 0;
 
+/** Structure of simulation parameters */
 struct SimulationParameters {
     double changingTime;
     double workHours;
@@ -35,12 +50,17 @@ struct SimulationParameters {
 
 SimulationParameters params = {5, 0, 15, 29, 1, 0, 45};
 
+/** Vector to store transaction times for visitors */
 vector<double> transactionTimes;
 
+/** Class representing a Visitor in the aquapark */
 class Visitor : public Process {
 public:
     double startTime;
 
+    /**
+     * @brief Behavior of a visitor in the aquapark
+     */
     void Behavior() {
         startTime = Time;
         EnterLockerRoom();
@@ -49,17 +69,26 @@ public:
     }
 
 private:
+    /**
+     * @brief Visitor enters the locker room
+     */
     void EnterLockerRoom() {
         Enter(lockerRoom, 1);
         Wait(Exponential(params.changingTime));
     }
 
+    /**
+     * @brief Visitor leaves the locker room
+     */
     void LeaveLockerRoom() {
         Leave(lockerRoom, 1);
         Wait(Exponential(params.changingTime));
         RecordTransactionTime();
     }
 
+    /**
+     * @brief Visitor chooses where to go next (swimming pool or sauna)
+     */
     void ChooseActivity() {
         double choice = Random();
         if (choice <= 0.7) {
@@ -69,16 +98,25 @@ private:
         }
     }
 
+    /**
+     * @brief Visitor goes swimming in the pool and decides what to do after swimming
+     */
     void GoSwimming() {
         Enter(pool, 1);
         Swim();
         DecideAfterSwim();
     }
 
+    /**
+     * @brief Visitor swims in the pool
+     */
     void Swim() {
         Wait(Exponential(params.swimmingTime));
     }
 
+    /**
+     * @brief Visitor decides what to do after swimming (leave, go to sauna or use water slide)
+     */
     void DecideAfterSwim() {
         double random = Random();
         if (random <= 0.4) {
@@ -91,6 +129,9 @@ private:
         }
     }
 
+    /**
+     * @brief Visitor uses the water slide and decides what to do after (leave, go to sauna or swim)
+     */
     void UseWaterSlide() {
         Seize(waterSlide);
         Wait(Exponential(params.tobogganTime));
@@ -98,6 +139,9 @@ private:
         DecideAfterSlide();
     }
 
+    /**
+     * @brief Visitor decides what to do after using the water slide (leave, go to sauna or swim)
+     */
     void DecideAfterSlide() {
         double random = Random();
         if (random <= 0.45) {
@@ -110,6 +154,9 @@ private:
         }
     }
 
+    /**
+     * @brief Visitor goes to the sauna and decides what to do after (leave or go swimming)
+     */
     void GoToSauna() {
         WaitUntilSaunaIsAvailable();
         if (sauna.Full()) {
@@ -122,15 +169,24 @@ private:
         }
     }
 
+    /**
+     * @brief Visitor waits until the sauna is available
+     */
     void WaitUntilSaunaIsAvailable() {
         double time_start = Time;
         WaitUntil(!sauna.Full() || Time - time_start > Exponential(params.saunaWaitTime));
     }
 
+    /**
+     * @brief Visitor spends time in the sauna
+     */
     void ChillInSauna() {
         Wait(Exponential(params.saunaTime));
     }
 
+    /**
+     * @brief Visitor decides what to do after spending time in the sauna (leave or go swimming)
+     */
     void DecideAfterSauna() {
         double random = Random();
         if (random <= 0.5) {
@@ -141,14 +197,21 @@ private:
         }
     }
 
+    /**
+     * @brief Records transaction time for the visitor
+     */
     void RecordTransactionTime() {
         double transactionTime = Time - startTime;
         transactionTimes.push_back(transactionTime);
     }
 };
 
+/** Class representing a generator that creates new visitors at specified intervals */
 class Generator : public Event {
 public:
+    /**
+     * @brief Behavior of the generator event
+     */
     void Behavior() {
         (new Visitor)->Activate();
         totalVisitors++;
@@ -156,14 +219,23 @@ public:
     }
 };
 
+/**
+ * @brief Prints the usage information for the program
+ * @param programName Name of the program
+ */
 void printUsage(const char *programName) {
-    std::cout << "Usage: " << programName
+    cout << "Usage: " << programName
               << " -d --day <day_type>\n";
-    std::cout << "Options:\n";
-    std::cout << "  -h --help - prints help\n";
-    std::cout << "  -d --day <day_type> - type of the day (weekday, weekend, holiday)\n";
+    cout << "Options:\n";
+    cout << "  -h --help - prints help\n";
+    cout << "  -d --day <day_type> - type of the day (weekday, weekend, holiday)\n";
 }
 
+/**
+ * @brief Parses command line arguments and sets simulation parameters
+ * @param argc Number of command line arguments
+ * @param argv Array of command line arguments
+ */
 void ParseArguments(int argc, char *argv[]) {
     if (argc < 2) {
         printUsage(argv[0]);
@@ -212,7 +284,7 @@ void ParseArguments(int argc, char *argv[]) {
     }
 
     if (optind < argc) {
-        std::cerr << "Error: Unexpected argument after options\n";
+        cerr << "Error: Unexpected argument after options\n";
         printUsage(argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -235,15 +307,15 @@ int main(int argc, char *argv[]) {
         sum += transactionTimes[i];
     }
 
-    std::ofstream file("kohoutovice.dat", std::ios::app);
+    ofstream file("kohoutovice.dat", ios::app);
 
     if (file.is_open()) {
 
-        file << "Sauna waiters: " << totalWaiters << std::endl;
-        file << "TotalVisitors: " << totalVisitors << std::endl;
+        file << "Sauna waiters: " << totalWaiters << endl;
+        file << "Total visitors: " << totalVisitors << endl;
         file.close();
     } else {
-        std::cout << "Cant open file" << std::endl;
+        cout << "Cant open file" << endl;
     }
 
     return 0;
