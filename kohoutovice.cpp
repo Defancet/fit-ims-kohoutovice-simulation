@@ -10,9 +10,9 @@ using namespace std;
 
 #define WaitUntil(condition) while(_WaitUntil(condition))
 
-const int LOCKER_ROOM_CAPACITY = 200;
+const int LOCKER_ROOM_CAPACITY = 192;
 const int POOL_CAPACITY = 180;
-const int SAUNA_CAPACITY = 20;
+const int SAUNA_CAPACITY = 12;
 
 Store lockerRoom("Locker Room", LOCKER_ROOM_CAPACITY);
 Store pool("Swimming Pools", POOL_CAPACITY);
@@ -33,7 +33,7 @@ struct SimulationParameters {
     double swimmingTime;
 };
 
-SimulationParameters params = {5, 0, 15, 30, 1, 0, 40};
+SimulationParameters params = {5, 0, 15, 29, 1, 0, 45};
 
 vector<double> transactionTimes;
 
@@ -81,9 +81,9 @@ private:
 
     void DecideAfterSwim() {
         double random = Random();
-        if (random <= 0.3) {
+        if (random <= 0.4) {
             Leave(pool, 1);
-        } else if (random <= 0.65) {
+        } else if (random <= 0.7) {
             Leave(pool, 1);
             GoToSauna();
         } else {
@@ -187,13 +187,13 @@ void ParseArguments(int argc, char *argv[]) {
                 exit(EXIT_SUCCESS);
             case 'd':
                 if (strcmp(optarg, "weekday") == 0) {
-                    params.workHours = 12 * 60;
+                    params.workHours = 15 * 60 + 30;
                     params.visitorsArrivalTime = 1.42;
                 } else if (strcmp(optarg, "weekend") == 0) {
-                    params.workHours = 14 * 60;
+                    params.workHours = 13 * 60 + 30;
                     params.visitorsArrivalTime = 1.30;
                 } else if (strcmp(optarg, "holiday") == 0) {
-                    params.workHours = 14 * 60;
+                    params.workHours = 13 * 60 + 30;
                     params.visitorsArrivalTime = 2.1;
                 } else {
                     printUsage(argv[0]);
