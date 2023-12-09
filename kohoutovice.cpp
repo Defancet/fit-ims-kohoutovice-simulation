@@ -11,7 +11,6 @@
 
 #include <cstring>
 #include <iostream>
-#include <bits/getopt_core.h>
 #include <vector>
 #include "getopt.h"
 #include "simlib.h"
@@ -225,10 +224,10 @@ public:
  */
 void printUsage(const char *programName) {
     cout << "Usage: " << programName
-              << " -d --day <day_type>\n";
+              << " -d <day_type>\n";
     cout << "Options:\n";
-    cout << "  -h --help - prints help\n";
-    cout << "  -d --day <day_type> - type of the day (weekday, weekend, holiday)\n";
+    cout << "  -h             prints help\n";
+    cout << "  -d <day_type>  type of the day (weekday, weekend, holiday)\n";
 }
 
 /**
@@ -242,16 +241,9 @@ void ParseArguments(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    static struct option long_options[] = {
-            {"help", no_argument,       0, 'h'},
-            {"day",  required_argument, 0, 'd'},
-            {0,      0,                 0, 0}
-    };
-
     int opt;
-    int option_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "hd:", long_options, &option_index)) != -1) {
+    while ((opt = getopt(argc, argv, "hd:")) != -1) {
         switch (opt) {
             case 'h':
                 printUsage(argv[0]);
