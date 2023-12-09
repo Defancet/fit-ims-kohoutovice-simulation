@@ -143,7 +143,6 @@ private:
 
     void RecordTransactionTime() {
         double transactionTime = Time - startTime;
-        //std::cout << "Transaction time: " << transactionTime << std::endl;
         transactionTimes.push_back(transactionTime);
     }
 };
@@ -230,20 +229,18 @@ int main(int argc, char *argv[]) {
     sauna.Output();
     pool.Output();
     waterSlide.Output();
-    std::cout << totalVisitors << std::endl;
 
     double sum = 0;
     for (int i = 0; i < transactionTimes.size(); i++) {
         sum += transactionTimes[i];
     }
-    //std::cout << "Average transaction time: " << sum / transactionTimes.size() << std::endl;
-    //std::cout << "Waiters: " << totalWaiters << std::endl;
 
     std::ofstream file("kohoutovice.dat", std::ios::app);
 
     if (file.is_open()) {
 
         file << "Sauna waiters: " << totalWaiters << std::endl;
+        file << "TotalVisitors: " << totalVisitors << std::endl;
         file.close();
     } else {
         std::cout << "Cant open file" << std::endl;
